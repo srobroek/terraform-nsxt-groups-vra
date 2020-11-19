@@ -1,14 +1,3 @@
-provider "nsxt" {
-  allow_unverified_ssl      = var.nsxt_cluster_allow_unverified_ssl
-  max_retries               = 10
-  retry_min_delay           = 500
-  retry_max_delay           = 5000
-  retry_on_status_codes     = [429]
-  username                  = var.nsxt_cluster_username
-  password                  = var.nsxt_cluster_password
-  host                      = var.nsxt_cluster_fqdn
-}
-
 locals {
   tags = {
     application:     [
