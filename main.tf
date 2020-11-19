@@ -1,8 +1,8 @@
 locals {
   tags = {
     application:     [
-      "environment|${var.product.environment}",
-      "application|${var.product.product_name}",
+      "environment|${var.environment}",
+      "application|${var.product_name}",
     ]
   } 
 }
@@ -12,7 +12,7 @@ locals {
 
 data "nsxt_policy_group" "lb_groups" {
   for_each = {
-    for key, value in var.product.lb_groups: key => value
+    for key, value in var.lb_groups: key => value
   }
   display_name = each.value
 }
@@ -20,7 +20,7 @@ data "nsxt_policy_group" "lb_groups" {
 ### get tag VMs
 data "nsxt_policy_vm" "vms" {
    display_name = each.value
-   for_each = toset(var.product.application_vms)
+   for_each = toset(var.application_vms)
 }
 
 
@@ -41,7 +41,7 @@ resource "nsxt_policy_vm_tags" "application_tags" {
       tag = split("|", tag.value)[1]
     }
   }
-  for_each = toset(var.product.application_vms)
+  for_each = toset(var.application_vms)
 }
 
 
@@ -49,7 +49,7 @@ resource "nsxt_policy_vm_tags" "application_tags" {
 
 ## this network needs to exist because vRA has leaky networks
 resource "nsxt_policy_group" "calico" {
-  display_name = "app.calico.${var.product.product_name}.${var.product.environment}"
+  display_name = "app.calico.${var.product_name}.${var.environment}"
   criteria {
     ipaddress_expression {
       ip_addresses = ["10.244.0.0/16"]
@@ -59,7 +59,7 @@ resource "nsxt_policy_group" "calico" {
 
 resource "nsxt_policy_group" "application" {
 
-  display_name = "app.all.${var.product.product_name}.${var.product.environment}"
+  display_name = "app.all.${var.product_name}.${var.environment}"
   criteria {
     dynamic "condition" {
       for_each = local.tags.application
@@ -78,10 +78,10 @@ resource "nsxt_policy_group" "application" {
 
 resource "nsxt_policy_group" "loadbalancer" {
 
-  display_name = "app.lb.${var.product.product_name}.${var.product.environment}"
+  display_name = "app.lb.${var.product_name}.${var.environment}"
   criteria {
     path_expression {
-      member_paths = [for key, value in var.product.lb_groups: (data.nsxt_policy_group.lb_groups[key]).path]
+      member_paths = [for key, value in var.lb_groups: (data.nsxt_policy_group.lb_groups[key]).path]
     }
   }
 }
@@ -91,7 +91,7 @@ resource "nsxt_policy_group" "loadbalancer" {
 
 # resource "nsxt_policy_group" "application_providers" {
 
-#   display_name = "provides.${each.value}.all.${var.product.product_name}.${var.product.environment}"
+#   display_name = "provides.${each.value}.all.${var.product_name}.${var.environment}"
 #   criteria {
 #     path_expression {
 #       member_paths = [nsxt_policy_group.application.path]
@@ -102,7 +102,7 @@ resource "nsxt_policy_group" "loadbalancer" {
 
 # resource "nsxt_policy_group" "intra-app_providers" {
 
-#   display_name = "provides.intra-app.all.${var.product.product_name}.${var.product.environment}"
+#   display_name = "provides.intra-app.all.${var.product_name}.${var.environment}"
 #   criteria {
 #     path_expression {
 #       member_paths = [
@@ -119,7 +119,7 @@ resource "nsxt_policy_group" "loadbalancer" {
 
 # resource "nsxt_policy_group" "loadbalancer_providers" {
 
-#   display_name = "provides.${each.value}.lb.${var.product.product_name}.${var.product.environment}"
+#   display_name = "provides.${each.value}.lb.${var.product_name}.${var.environment}"
 #   criteria {
 #     path_expression {
 #       member_paths = [nsxt_policy_group.loadbalancer.path]
