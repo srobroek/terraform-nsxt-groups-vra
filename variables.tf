@@ -3,10 +3,11 @@ variable "environment" {
   type = string
   default = "prod"
 }
-variable "product_name" {
+variable "product" {
   type = string 
   default = "vra"
 }
+
 variable "application_vms" {
   type = list(string)
 }

@@ -1,8 +1,19 @@
+provider "nsxt" {
+  allow_unverified_ssl      = var.nsxt_cluster_allow_unverified_ssl
+  max_retries               = 10
+  retry_min_delay           = 500
+  retry_max_delay           = 5000
+  retry_on_status_codes     = [429]
+  username                  = var.nsxt_cluster_username
+  password                  = var.nsxt_cluster_password
+  host                      = var.nsxt_cluster_fqdn
+}
+
 locals {
   tags = {
     application:     [
       "environment|${var.environment}",
-      "application|${var.product_name}",
+      "application|${var.product}",
     ]
   } 
 }
@@ -49,7 +60,7 @@ resource "nsxt_policy_vm_tags" "application_tags" {
 
 ## this network needs to exist because vRA has leaky networks
 resource "nsxt_policy_group" "calico" {
-  display_name = "app.calico.${var.product_name}.${var.environment}"
+  display_name = "app.calico.${var.product}.${var.environment}"
   criteria {
     ipaddress_expression {
       ip_addresses = ["10.244.0.0/16"]
@@ -59,7 +70,7 @@ resource "nsxt_policy_group" "calico" {
 
 resource "nsxt_policy_group" "application" {
 
-  display_name = "app.all.${var.product_name}.${var.environment}"
+  display_name = "app.all.${var.product}.${var.environment}"
   criteria {
     dynamic "condition" {
       for_each = local.tags.application
@@ -78,57 +89,12 @@ resource "nsxt_policy_group" "application" {
 
 resource "nsxt_policy_group" "loadbalancer" {
 
-  display_name = "app.lb.${var.product_name}.${var.environment}"
+  display_name = "app.lb.${var.product}.${var.environment}"
   criteria {
     path_expression {
       member_paths = [for key, value in var.lb_groups: (data.nsxt_policy_group.lb_groups[key]).path]
     }
   }
 }
-
-
-##provider groups
-
-# resource "nsxt_policy_group" "application_providers" {
-
-#   display_name = "provides.${each.value}.all.${var.product_name}.${var.environment}"
-#   criteria {
-#     path_expression {
-#       member_paths = [nsxt_policy_group.application.path]
-#     }
-#   }
-#   for_each = toset(local.provides.app)
-# }
-
-# resource "nsxt_policy_group" "intra-app_providers" {
-
-#   display_name = "provides.intra-app.all.${var.product_name}.${var.environment}"
-#   criteria {
-#     path_expression {
-#       member_paths = [
-#         nsxt_policy_group.application.path,
-#         nsxt_policy_group.calico.path,
-#         nsxt_policy_group.loadbalancer.path
-#       ]
-#     }
-#   }
-# }
-
-
-
-
-# resource "nsxt_policy_group" "loadbalancer_providers" {
-
-#   display_name = "provides.${each.value}.lb.${var.product_name}.${var.environment}"
-#   criteria {
-#     path_expression {
-#       member_paths = [nsxt_policy_group.loadbalancer.path]
-#     }
-#   }
-#   for_each = toset(local.provides.lb)
-# }
-
-
-##consumer groups
 
 
