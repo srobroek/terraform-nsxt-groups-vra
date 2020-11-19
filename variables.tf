@@ -6,7 +6,7 @@ variable "environment" {
 variable "product_name" {
   type = string 
   default = "vra"
-
+}
 variable "application_vms" {
   type = list(string)
 }
